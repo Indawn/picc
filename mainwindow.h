@@ -4,7 +4,8 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/videoio.hpp>
+//#include <opencv2/highgui/highgui.hpp>
 
 #include <QTimer>
 
@@ -20,7 +21,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-
+    cv::Mat mat_size;
     cv::Mat mat_opened;
     bool cameraStatus;
     cv::VideoCapture capture;

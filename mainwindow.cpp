@@ -1,39 +1,53 @@
 ﻿#include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+/**  ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ Pylon ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓   **/
+
 #include <pylon/PylonIncludes.h>
+
 #ifdef PYLON_WIN_BUILD
 #include <pylon/PylonGUI.h>
 #endif
 
-//using namespace Pylon;
-#include <pylon/usb/BaslerUsbCamera.h>
+#include <pylon/ImageFormatConverter.h>
+//using namespace ImageFileFormat_Jpeg;
+#include <pylon/usb/BaslerUsbInstantCamera.h>
+typedef Pylon::CBaslerUsbInstantCamera Camera_t;
+
+using namespace Basler_UsbCameraParams;
+using namespace Pylon;  // Namespace for using pylon objects.
+
+/**
+#if defined ( USE_USB )
+// Settings for using Basler USB cameras.
+#include <pylon/usb/BaslerUsbInstantCamera.h>
+typedef Pylon::CBaslerUsbInstantCamera Camera_t;
+using namespace Basler_UsbCameraParams;
+#else
+#error Camera type is not specified. Define USE_USB for using Usb cameras.
+#endif
+**/
+
+/**  ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ QT ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓   **/
 
 #include <QFileDialog>
 #include <QLabel>
 #include <QCamera>
 #include <QCameraInfo>
 #include <QMessageBox>
+
+/**  ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ openCV ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓   **/
+
 #include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/videoio.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include <opencv2/face.hpp>
-#include <iostream>
-using namespace std;
 using namespace cv;
 using namespace cv::face;
-//#include <>
-//#include <pylon/PylonGUI.h>
+
+#include <iostream>
 #include <conio.h>
-
-// Namespace for using pylon objects.
-using namespace Pylon;
-
-// Namespace for using cout.
 using namespace std;
-
-// Number of images to be grabbed.
-static const uint32_t c_countOfImagesToGrab = 1000;
-
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -74,6 +88,7 @@ void MainWindow::on_actionOpen_triggered()
     {
         QString  curr_picname = fileDialog->selectedFiles()[0];//得到用户选择的文件名
         mat_opened = imread(curr_picname.toLocal8Bit().constData());
+        mat_size = mat_opened;
         if(mat_opened.data)
         {
             scaledmat2label(mat_opened, ui->label_pic0);
@@ -126,7 +141,6 @@ void MainWindow::on_actionOpenCamera_triggered()
        msg.setText(u8"摄像头未打开");
        msg.exec();
    }
-
 
 }
 
@@ -282,7 +296,7 @@ void MainWindow::getframe()
         timer->stop();//如果取不到数据，终止计时器
     else
     {
-        Mat src = mat_opened;
+ /*       Mat src = mat_opened;
         Mat frame = src.clone();
         Mat facesRIO;
         //图像缩放，采用双线性插值。
@@ -313,8 +327,8 @@ void MainWindow::getframe()
             rectangle(frame,faces[i],Scalar(0,0,255),1);
 
             mat_opened = frame;
-            scaledmat2label(mat_opened, ui->label_pic0);
-        }
+ */           scaledmat2label(mat_opened, ui->label_pic0);
+      //  }
     }
 }
 
@@ -408,7 +422,44 @@ void MainWindow::on_actioncamerainfo_triggered()
 void MainWindow::on_actionOpen_pylon_triggered()
 {
     PylonInitialize();
-/*
+    // Only look for cameras supported by Camera_t.
+    CInstantCamera camera( CTlFactory::GetInstance().CreateFirstDevice());
+           cout << "Using device " << camera.GetDeviceInfo().GetModelName() << endl;
+           camera.MaxNumBuffer =  5;
+           camera.StartGrabbing();
+           CGrabResultPtr ptrGrabResult;
+    camera.RetrieveResult(5000 , ptrGrabResult, TimeoutHandling_ThrowException);
+    if(ptrGrabResult->GrabSucceeded())
+    {
+          CPylonImage target;
+        CImageFormatConverter converter;
+         converter.OutputPixelFormat=PixelType_RGB8packed;
+         converter.OutputBitAlignment=OutputBitAlignment_MsbAligned;
+         converter.Convert(target,ptrGrabResult);
+        mat_opened = cv::Mat(target.GetHeight(),target.GetWidth(),CV_8UC3,target.GetBuffer(),Mat::AUTO_STEP);
+         ptrGrabResult.Release();
+
+     //   mat_opened = cv::Mat(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC3, (uint8_t *)ptrGrabResult->GetBuffer());
+        scaledmat2label(mat_opened, ui->label_pic0);
+    }
+    PylonTerminate();
+
+/*      if (capture.isOpened())
+        capture.release();     //decide if capture is already opened; if so,close it
+    if(capture.open(0))
+    {
+
+        timer->start(42);//按照每秒24帧计算，每过42ms执行一次getframe
+    }
+    else
+    {
+        QMessageBox msg;
+        msg.setText(u8"摄像头未打开");
+        msg.exec();
+    }  CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());
+    Pylon::CBaslerUsbInstantCamera Camera_t;
+            camera.RegisterConfiguration(new CSoftwareTriggerConfiguration, RegistrationMode_ReplaceAll, Cleanup_Delete);
+   camera.Width.SetValue(1296);
     try
     {
         CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());

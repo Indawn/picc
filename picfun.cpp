@@ -61,9 +61,9 @@ void MainWindow::scaledmat2label(Mat mat, QLabel* label)
         double pecentage=(double)label->width() / mat.cols;
         if((double)label->height() / mat.rows < pecentage)
             pecentage =(double)label->height() / mat.rows;
-        cv::resize(mat, mat, cv::Size(0,0), pecentage, pecentage, INTER_AREA );
+        cv::resize(mat, mat_size, cv::Size(0,0), pecentage, pecentage, INTER_AREA );
         label->clear();
-        label->setPixmap(QPixmap::fromImage(cvMat2QImage(mat)));
+        label->setPixmap(QPixmap::fromImage(cvMat2QImage(mat_size)));
         label->show();
     }
 
